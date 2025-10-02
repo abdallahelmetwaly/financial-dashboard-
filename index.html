@@ -1,1 +1,307 @@
 <html></html>).
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة البيانات المالية التفاعلية</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js Datalabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <!-- Custom Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+        }
+        .chart-container {
+            position: relative;
+            height: 320px;
+        }
+        select {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+        }
+        .table-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #161b22;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background-color: #30363d;
+            border-radius: 10px;
+            border: 3px solid #161b22;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 flex justify-between items-center flex-wrap gap-4">
+             <div>
+                <h1 class="text-3xl font-extrabold text-white">لوحة البيانات المالية</h1>
+                <p id="dashboard-subtitle" class="text-gray-400 mt-1">ملخص أداء الفترة كاملة</p>
+            </div>
+            <div>
+                <label for="date-filter" class="block text-sm font-medium text-gray-400 mb-1">عرض التقرير لـ:</label>
+                <select id="date-filter" class="w-full p-2 rounded-lg">
+                    <option value="all">الفترة كاملة</option>
+                </select>
+            </div>
+        </header>
+
+        <!-- Main Grid Layout -->
+        <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- KPIs -->
+            <div class="card p-5 rounded-xl col-span-1">
+                <h3 id="total-sales-label" class="text-md font-medium text-gray-400">إجمالي المبيعات</h3>
+                <p id="total-sales" class="text-4xl font-bold text-white mt-2">0.00 ريال</p>
+            </div>
+            <div class="card p-5 rounded-xl col-span-1">
+                <h3 id="cash-sales-label" class="text-md font-medium text-gray-400">صافي مبيعات الكاش</h3>
+                <p id="total-cash-sales" class="text-4xl font-bold text-green-400 mt-2">0.00 ريال</p>
+            </div>
+            <div class="card p-5 rounded-xl col-span-1">
+                <h3 id="expenses-label" class="text-md font-medium text-gray-400">إجمالي المصروفات</h3>
+                <p id="total-expenses" class="text-4xl font-bold text-red-400 mt-2">0.00 ريال</p>
+            </div>
+            
+            <div class="card p-5 rounded-xl col-span-1 sm:col-span-1">
+                <h3 class="text-md font-medium text-gray-400">الرصيد الافتتاحي</h3>
+                <p id="opening-balance" class="text-3xl font-bold text-white mt-1">0.00 ريال</p>
+            </div>
+            <div class="card p-5 rounded-xl col-span-1 sm:col-span-2 lg:col-span-2 bg-gradient-to-br from-blue-500 to-indigo-600">
+                 <h3 class="text-md font-bold text-indigo-100">الرصيد الختامي</h3>
+                <p id="closing-cash" class="text-4xl font-extrabold text-white mt-1">0.00 ريال</p>
+            </div>
+
+            <!-- Revenue Breakdown Chart -->
+            <div class="card p-6 rounded-xl sm:col-span-2 lg:col-span-3">
+                <h3 id="pie-chart-title" class="text-lg font-bold text-white mb-4">توزيع إجمالي المبيعات</h3>
+                <div class="chart-container"><canvas id="totalRevenuePieChart"></canvas></div>
+            </div>
+
+            <!-- Daily Sales Bar Chart -->
+            <div class="card p-6 rounded-xl sm:col-span-2 lg:col-span-3">
+                <h3 class="text-lg font-bold text-white mb-4">إجمالي المبيعات اليومية</h3>
+                <div class="chart-container"><canvas id="dailySalesBarChart"></canvas></div>
+            </div>
+
+            <!-- Expenses Table -->
+            <div class="card p-6 rounded-xl sm:col-span-2 lg:col-span-3">
+                <h3 class="text-lg font-bold text-white mb-4">بنود المصروفات</h3>
+                <div class="table-container">
+                    <table class="w-full text-sm text-left text-gray-400">
+                        <thead class="text-xs text-gray-300 uppercase bg-gray-800 sticky top-0">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">التاريخ</th>
+                                <th scope="col" class="px-6 py-3">الوصف</th>
+                                <th scope="col" class="px-6 py-3 text-right">المبلغ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenses-table-body">
+                            <!-- Rows will be injected by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+    window.onload = () => {
+        Chart.register(ChartDataLabels);
+
+        const initialCashBalance = 3540.00;
+        const dailyReports = [
+            { date: '2025-09-01', cashSales: -288.00, cardSales: 1212.00, creditSales: 33.00, expenses: [{ description: 'مصروفات متنوعة', amount: 15.00 }] },
+            { date: '2025-09-02', cashSales: 612.00, cardSales: 361.00, creditSales: 240.00, expenses: [] },
+            { date: '2025-09-03', cashSales: 265.00, cardSales: 746.00, creditSales: 88.00, expenses: [] },
+            { date: '2025-09-04', cashSales: 529.00, cardSales: 714.00, creditSales: 57.00, expenses: [] },
+            { date: '2025-09-05', cashSales: 176.00, cardSales: 348.00, creditSales: 0.00, expenses: [] },
+            { date: '2025-09-06', cashSales: 487.00, cardSales: 460.00, creditSales: 1119.00, expenses: [] },
+            { date: '2025-09-07', cashSales: 819.00, cardSales: 1205.00, creditSales: 169.00, expenses: [] },
+            { date: '2025-09-08', cashSales: 312.00, cardSales: 728.00, creditSales: 635.00, expenses: [] },
+            { date: '2025-09-09', cashSales: 245.00, cardSales: 634.00, creditSales: 468.00, expenses: [] },
+            { date: '2025-09-10', cashSales: 231.00, cardSales: 1096.00, creditSales: 34.00, expenses: [{ description: 'راتب الصيدلي', amount: 5500.00 }, { description: 'راتب العامل', amount: 400.00 }] },
+            { date: '2025-09-11', cashSales: 172.00, cardSales: 869.00, creditSales: 144.00, expenses: [] },
+            { date: '2025-09-12', cashSales: 158.00, cardSales: 468.00, creditSales: 33.00, expenses: [] },
+            { date: '2025-09-13', cashSales: 367.00, cardSales: 235.00, creditSales: 0.00, expenses: [] }
+        ];
+
+        let totalRevenuePieChartInstance, dailySalesBarChartInstance;
+
+        // --- DOM Elements ---
+        const totalSalesEl = document.getElementById('total-sales');
+        const totalCashSalesEl = document.getElementById('total-cash-sales');
+        const totalExpensesEl = document.getElementById('total-expenses');
+        const openingBalanceEl = document.getElementById('opening-balance');
+        const closingCashEl = document.getElementById('closing-cash');
+        const dateFilter = document.getElementById('date-filter');
+        const subtitleEl = document.getElementById('dashboard-subtitle');
+        const pieChartTitleEl = document.getElementById('pie-chart-title');
+        const expensesTableBody = document.getElementById('expenses-table-body');
+
+        const formatCurrency = (value) => `${value.toFixed(2)} ر.س`;
+
+        function populateDateFilter() {
+            while (dateFilter.options.length > 1) { dateFilter.remove(1); }
+            dailyReports.forEach(report => {
+                const option = document.createElement('option');
+                option.value = report.date;
+                option.textContent = report.date;
+                dateFilter.appendChild(option);
+            });
+        }
+
+        function updateDashboard() {
+            const selectedDate = dateFilter.value;
+            const isAllDates = selectedDate === 'all';
+            const filteredReports = isAllDates ? dailyReports : dailyReports.filter(r => r.date === selectedDate);
+            
+            subtitleEl.textContent = isAllDates ? 'ملخص أداء الفترة كاملة' : `ملخص أداء يوم ${selectedDate}`;
+            pieChartTitleEl.textContent = isAllDates ? 'توزيع إجمالي المبيعات خلال الفترة' : `توزيع المبيعات ليوم ${selectedDate}`;
+
+            const totals = filteredReports.reduce((acc, report) => {
+                acc.cashSales += report.cashSales;
+                acc.cardSales += report.cardSales;
+                acc.creditSales += report.creditSales;
+                acc.expenses += report.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                return acc;
+            }, { cashSales: 0, cardSales: 0, creditSales: 0, expenses: 0 });
+
+            const grandTotalSales = totals.cashSales + totals.cardSales + totals.creditSales;
+            
+            let openingBalance = initialCashBalance;
+            if (!isAllDates) {
+                 openingBalance = dailyReports
+                    .filter(r => new Date(r.date) < new Date(selectedDate))
+                    .reduce((acc, report) => acc + report.cashSales - report.expenses.reduce((s, e) => s + e.amount, 0), initialCashBalance);
+            }
+            
+            const finalClosingBalance = openingBalance + totals.cashSales - totals.expenses;
+
+            totalSalesEl.textContent = formatCurrency(grandTotalSales);
+            totalCashSalesEl.textContent = formatCurrency(totals.cashSales);
+            totalCashSalesEl.classList.toggle('text-red-400', totals.cashSales < 0);
+            totalCashSalesEl.classList.toggle('text-green-400', totals.cashSales >= 0);
+            totalExpensesEl.textContent = formatCurrency(totals.expenses);
+            openingBalanceEl.textContent = formatCurrency(openingBalance);
+            closingCashEl.textContent = formatCurrency(finalClosingBalance);
+
+            renderTotalRevenuePieChart(totals);
+            renderDailySalesBarChart();
+            renderExpensesTable(filteredReports);
+        }
+        
+        function renderExpensesTable(filteredReports) {
+            expensesTableBody.innerHTML = '';
+            let hasExpenses = false;
+            filteredReports.forEach(report => {
+                if (report.expenses && report.expenses.length > 0) {
+                    hasExpenses = true;
+                    report.expenses.forEach(expense => {
+                        const row = document.createElement('tr');
+                        row.className = 'bg-gray-900 border-b border-gray-700 hover:bg-gray-800';
+                        row.innerHTML = `
+                            <td class="px-6 py-4">${report.date}</td>
+                            <td class="px-6 py-4">${expense.description}</td>
+                            <td class="px-6 py-4 text-right">${formatCurrency(expense.amount)}</td>
+                        `;
+                        expensesTableBody.appendChild(row);
+                    });
+                }
+            });
+            if (!hasExpenses) {
+                expensesTableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center">لا توجد مصروفات مسجلة لهذه الفترة</td></tr>`;
+            }
+        }
+
+        function renderTotalRevenuePieChart(totals) {
+            const ctx = document.getElementById('totalRevenuePieChart').getContext('2d');
+            if (totalRevenuePieChartInstance) totalRevenuePieChartInstance.destroy();
+            totalRevenuePieChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['صافي الكاش', 'شبكة (مدى)', 'آجل'],
+                    datasets: [{
+                        data: [Math.abs(totals.cashSales), totals.cardSales, totals.creditSales],
+                        backgroundColor: [totals.cashSales < 0 ? '#fca5a5' : '#a7f3d0', '#60a5fa', '#fb923c'],
+                        borderColor: '#161b22', borderWidth: 5,
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { color: '#c9d1d9', font: { size: 14, family: 'Tajawal' }}},
+                        datalabels: {
+                            color: '#fff',
+                            font: { weight: 'bold', size: 14, family: 'Tajawal' },
+                            formatter: (value) => value > 0 ? formatCurrency(value) : ''
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderDailySalesBarChart() {
+            const ctx = document.getElementById('dailySalesBarChart').getContext('2d');
+            if (dailySalesBarChartInstance) dailySalesBarChartInstance.destroy();
+            const labels = dailyReports.map(r => r.date);
+            const data = dailyReports.map(r => r.cashSales + r.cardSales + r.creditSales);
+            dailySalesBarChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'إجمالي المبيعات',
+                        data: data,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                             color: '#fff', anchor: 'end', align: 'top',
+                             font: { weight: 'bold', family: 'Tajawal' },
+                             formatter: (value) => formatCurrency(value)
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#8b949e', font: { family: 'Tajawal' } }, grid: { color: 'rgba(139, 148, 158, 0.2)' } },
+                        x: { ticks: { color: '#c9d1d9', font: { family: 'Tajawal', size: 12 } }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // --- Initialization ---
+        populateDateFilter();
+        dateFilter.addEventListener('change', updateDashboard);
+        updateDashboard(); // Initial load
+    };
+    </script>
+</body>
+</html>
